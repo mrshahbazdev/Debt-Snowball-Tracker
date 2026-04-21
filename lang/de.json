@@ -1,0 +1,23 @@
+{
+    "Email": "E-Mail",
+    "Password": "Passwort",
+    "Confirm Password": "Passwort bestätigen",
+    "Current Password": "Aktuelles Passwort",
+    "New Password": "Neues Passwort",
+    "Name": "Name",
+    "Remember me": "Angemeldet bleiben",
+    "Forgot your password?": "Passwort vergessen?",
+    "Log in": "Anmelden",
+    "Log Out": "Abmelden",
+    "Register": "Registrieren",
+    "Reset Password": "Passwort zurücksetzen",
+    "Email Password Reset Link": "Link zum Zurücksetzen senden",
+    "Already registered?": "Bereits registriert?",
+    "Save": "Speichern",
+    "Saved.": "Gespeichert.",
+    "Cancel": "Abbrechen",
+    "Confirm": "Bestätigen",
+    "Profile": "Profil",
+    "Dashboard": "Dashboard",
+    "Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.": "Passwort vergessen? Kein Problem. Gib einfach deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen."
+}
