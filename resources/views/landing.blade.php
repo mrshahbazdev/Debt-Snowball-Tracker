@@ -78,8 +78,8 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     @foreach ([
                         ['label' => __('messages.dashboard.kpi_active'), 'value' => '3', 'color' => 'text-sky-300'],
-                        ['label' => __('messages.dashboard.kpi_paid'), 'value' => '1', 'color' => 'text-emerald-300'],
-                        ['label' => __('messages.dashboard.kpi_outstanding'), 'value' => 'PKR 54.2k', 'color' => 'text-amber-300'],
+                        ['label' => __('messages.dashboard.kpi_paid'), 'value' => '0', 'color' => 'text-emerald-300'],
+                        ['label' => __('messages.dashboard.kpi_outstanding'), 'value' => 'PKR 54,200', 'color' => 'text-amber-300'],
                         ['label' => __('messages.dashboard.kpi_allocation'), 'value' => 'PKR 500', 'color' => 'text-indigo-300'],
                     ] as $k)
                     <div class="rounded-xl bg-slate-900/60 ring-1 ring-white/10 p-4 text-left">
@@ -91,10 +91,10 @@
                 <div class="mt-4 rounded-xl bg-slate-900/60 ring-1 ring-white/10 p-4 text-left">
                     <div class="flex items-center justify-between">
                         <div class="text-sm font-semibold text-white">{{ __('messages.dashboard.current_target') }}</div>
-                        <div class="text-xs text-slate-400">Test Loan · PKR 200</div>
+                        <div class="text-xs text-slate-400">Test Loan · PKR 200 / 400</div>
                     </div>
                     <div class="mt-3 h-2 rounded-full bg-slate-800 overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-sky-400 to-cyan-300" style="width: 60%;"></div>
+                        <div class="h-full bg-gradient-to-r from-sky-400 to-cyan-300" style="width: 50%;"></div>
                     </div>
                 </div>
             </div>
