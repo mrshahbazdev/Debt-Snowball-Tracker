@@ -28,6 +28,9 @@
             {{ $slot }}
         </main>
     </div>
+
+    <x-confirm-modal />
+
     @livewireScripts
 </body>
 </html>

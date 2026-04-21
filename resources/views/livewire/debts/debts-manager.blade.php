@@ -1,15 +1,8 @@
 <div>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="font-bold text-2xl text-slate-900 tracking-tight">{{ __('messages.debts.title') }}</h2>
-                <p class="text-sm text-slate-500 mt-0.5">{{ __('messages.debts.subtitle') }}</p>
-            </div>
-            <button wire:click="openCreate"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold shadow transition">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                {{ __('messages.debts.add') }}
-            </button>
+        <div>
+            <h2 class="font-bold text-2xl text-slate-900 tracking-tight">{{ __('messages.debts.title') }}</h2>
+            <p class="text-sm text-slate-500 mt-0.5">{{ __('messages.debts.subtitle') }}</p>
         </div>
     </x-slot>
 
@@ -19,6 +12,14 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+            <div class="flex items-center justify-end">
+                <button type="button" wire:click="openCreate"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold shadow transition">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    {{ __('messages.debts.add') }}
+                </button>
+            </div>
 
             @if ($target)
                 <div class="rounded-2xl bg-sky-50 ring-1 ring-sky-200 p-4 flex items-center gap-3 text-sm">
@@ -146,7 +147,17 @@
                                             <button wire:click="togglePaid({{ $debt->id }})" class="px-2 py-1 rounded-md text-xs font-medium text-sky-600 hover:bg-sky-50 transition">
                                                 {{ $debt->status === 'ACTIVE' ? __('messages.debts.mark_paid') : __('messages.debts.reopen') }}
                                             </button>
-                                            <button wire:click="delete({{ $debt->id }})" wire:confirm="{{ __('messages.debts.confirm_delete') }}" class="px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition">{{ __('messages.debts.delete') }}</button>
+                                            <button type="button"
+                                                x-data
+                                                @click="$dispatch('open-confirm', {
+                                                    title: @js(__('messages.debts.delete')),
+                                                    message: @js(__('messages.debts.confirm_delete')),
+                                                    confirm: @js(__('messages.common.delete')),
+                                                    cancel: @js(__('messages.common.cancel')),
+                                                    variant: 'danger',
+                                                    action: () => $wire.delete({{ $debt->id }}),
+                                                })"
+                                                class="px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition">{{ __('messages.debts.delete') }}</button>
                                         </div>
                                     </td>
                                 </tr>

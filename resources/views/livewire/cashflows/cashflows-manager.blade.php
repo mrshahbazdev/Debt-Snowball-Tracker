@@ -1,15 +1,8 @@
 <div>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <div>
-                <h2 class="font-bold text-2xl text-slate-900 tracking-tight">{{ __('messages.cashflows.title') }}</h2>
-                <p class="text-sm text-slate-500 mt-0.5">{{ __('messages.cashflows.subtitle') }}</p>
-            </div>
-            <button wire:click="openCreate"
-                class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold shadow transition">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-                {{ __('messages.cashflows.add') }}
-            </button>
+        <div>
+            <h2 class="font-bold text-2xl text-slate-900 tracking-tight">{{ __('messages.cashflows.title') }}</h2>
+            <p class="text-sm text-slate-500 mt-0.5">{{ __('messages.cashflows.subtitle') }}</p>
         </div>
     </x-slot>
 
@@ -17,6 +10,14 @@
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+            <div class="flex items-center justify-end">
+                <button type="button" wire:click="openCreate"
+                    class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 text-sm font-semibold shadow transition">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    {{ __('messages.cashflows.add') }}
+                </button>
+            </div>
 
             @if ($flash)
                 <div class="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 text-sm p-3 flex items-center gap-2">
@@ -84,13 +85,32 @@
                                     </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="inline-flex items-center gap-1">
-                                            <button wire:click="applySnowball({{ $cf->id }})" wire:confirm="{{ __('messages.cashflows.confirm_apply') }}"
+                                            <button type="button"
+                                                x-data
+                                                @click="$dispatch('open-confirm', {
+                                                    title: @js(__('messages.cashflows.apply')),
+                                                    message: @js(__('messages.cashflows.confirm_apply')),
+                                                    confirm: @js(__('messages.cashflows.apply')),
+                                                    cancel: @js(__('messages.common.cancel')),
+                                                    variant: 'primary',
+                                                    action: () => $wire.applySnowball({{ $cf->id }}),
+                                                })"
                                                 class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-600 hover:bg-sky-700 text-white transition">
                                                 <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                                 {{ __('messages.cashflows.apply') }}
                                             </button>
-                                            <button wire:click="openEdit({{ $cf->id }})" class="px-2 py-1 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition">{{ __('messages.common.edit') }}</button>
-                                            <button wire:click="delete({{ $cf->id }})" wire:confirm="{{ __('messages.cashflows.confirm_delete') }}" class="px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition">{{ __('messages.common.delete') }}</button>
+                                            <button type="button" wire:click="openEdit({{ $cf->id }})" class="px-2 py-1 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 transition">{{ __('messages.common.edit') }}</button>
+                                            <button type="button"
+                                                x-data
+                                                @click="$dispatch('open-confirm', {
+                                                    title: @js(__('messages.common.delete')),
+                                                    message: @js(__('messages.cashflows.confirm_delete')),
+                                                    confirm: @js(__('messages.common.delete')),
+                                                    cancel: @js(__('messages.common.cancel')),
+                                                    variant: 'danger',
+                                                    action: () => $wire.delete({{ $cf->id }}),
+                                                })"
+                                                class="px-2 py-1 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition">{{ __('messages.common.delete') }}</button>
                                         </div>
                                     </td>
                                 </tr>
