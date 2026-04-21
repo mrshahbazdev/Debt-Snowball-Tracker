@@ -51,7 +51,16 @@
                                     <td class="px-4 py-3 text-right text-slate-600">{{ $fmt($p->balance_before) }}</td>
                                     <td class="px-4 py-3 text-right text-slate-900 font-medium">{{ $fmt($p->balance_after) }}</td>
                                     <td class="px-4 py-3 text-right">
-                                        <button wire:click="delete({{ $p->id }})" wire:confirm="{{ __('messages.payments.confirm_undo') }}"
+                                        <button type="button"
+                                            x-data
+                                            @click="$dispatch('open-confirm', {
+                                                title: @js(__('messages.payments.undo')),
+                                                message: @js(__('messages.payments.confirm_undo')),
+                                                confirm: @js(__('messages.payments.undo')),
+                                                cancel: @js(__('messages.common.cancel')),
+                                                variant: 'danger',
+                                                action: () => $wire.delete({{ $p->id }}),
+                                            })"
                                             class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-rose-600 hover:bg-rose-50 transition">
                                             <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
                                             {{ __('messages.payments.undo') }}
