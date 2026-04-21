@@ -6,11 +6,20 @@ use App\Livewire\Dashboard\DashboardView;
 use App\Livewire\Debts\DebtsManager;
 use App\Livewire\Payments\PaymentsTable;
 use App\Livewire\Settings\SettingsForm;
+use App\Http\Middleware\SetLocale;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('landing');
+})->name('landing');
+
+Route::get('/locale/{locale}', function (string $locale, Request $request) {
+    if (in_array($locale, SetLocale::SUPPORTED, true)) {
+        $request->session()->put('locale', $locale);
+    }
+    return redirect()->back();
+})->name('locale.switch');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', DashboardView::class)->name('dashboard');
