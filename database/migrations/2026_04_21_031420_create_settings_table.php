@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->decimal('debt_allocation_percent', 6, 3)->default(1.000); // percent, e.g. 1.000 = 1%
             $table->decimal('minimum_cash_buffer', 15, 2)->default(0);
             $table->boolean('new_debt_allowed')->default(false);
-            $table->string('currency', 8)->default('PKR');
+            $table->string('currency', 8)->default('EUR');
             $table->timestamps();
         });
     }

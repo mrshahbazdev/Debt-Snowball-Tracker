@@ -2,8 +2,8 @@
 
 namespace App\Livewire\Cashflows;
 
-use App\Models\Cashflow;
 use App\Services\SnowballService;
+use App\Support\CurrentCompany;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
@@ -31,6 +31,11 @@ class CashflowsManager extends Component
         $this->period = Carbon::now()->startOfMonth()->toDateString();
     }
 
+    protected function company()
+    {
+        return CurrentCompany::resolve(auth()->user());
+    }
+
     protected function rules(): array
     {
         return [
@@ -49,7 +54,7 @@ class CashflowsManager extends Component
 
     public function openEdit(int $id): void
     {
-        $cf = auth()->user()->cashflows()->findOrFail($id);
+        $cf = $this->company()->cashflows()->findOrFail($id);
         $this->editingId = $cf->id;
         $this->period = $cf->period->toDateString();
         $this->revenue = (float) $cf->revenue;
@@ -60,8 +65,8 @@ class CashflowsManager extends Component
     public function save(): void
     {
         $data = $this->validate();
-        $user = auth()->user();
-        $setting = $user->getOrCreateSetting();
+        $company = $this->company();
+        $setting = $company->getOrCreateSetting();
 
         $period = Carbon::parse($data['period'])->startOfMonth();
         $revenue = (float) $data['revenue'];
@@ -69,7 +74,7 @@ class CashflowsManager extends Component
         $available = round($revenue - $alloc, 2);
 
         if ($this->editingId) {
-            $cf = $user->cashflows()->findOrFail($this->editingId);
+            $cf = $company->cashflows()->findOrFail($this->editingId);
             $cf->update([
                 'period' => $period,
                 'revenue' => $revenue,
@@ -78,9 +83,10 @@ class CashflowsManager extends Component
                 'notes' => $data['notes'] ?? null,
             ]);
         } else {
-            $user->cashflows()->updateOrCreate(
+            $company->cashflows()->updateOrCreate(
                 ['period' => $period],
                 [
+                    'user_id' => $company->user_id,
                     'revenue' => $revenue,
                     'debt_allocation' => $alloc,
                     'available_cash' => $available,
@@ -96,12 +102,12 @@ class CashflowsManager extends Component
 
     public function delete(int $id): void
     {
-        auth()->user()->cashflows()->findOrFail($id)->delete();
+        $this->company()->cashflows()->findOrFail($id)->delete();
     }
 
     public function applySnowball(int $id, SnowballService $snowball): void
     {
-        $cf = auth()->user()->cashflows()->findOrFail($id);
+        $cf = $this->company()->cashflows()->findOrFail($id);
         $payments = $snowball->distributeCashflow($cf);
         $this->flash = count($payments) . ' payment(s) applied.';
     }
@@ -122,7 +128,7 @@ class CashflowsManager extends Component
 
     public function render(): View
     {
-        $cashflows = auth()->user()->cashflows()
+        $cashflows = $this->company()->cashflows()
             ->withCount('payments')
             ->orderByDesc('period')
             ->paginate(12);

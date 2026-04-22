@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\Cashflow;
+use App\Models\Company;
 use App\Models\Debt;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,65 +13,49 @@ use Illuminate\Support\Facades\DB;
 class SnowballService
 {
     /**
-     * Returns active debts ordered by smallest current balance first (snowball rank 1 = smallest).
+     * Returns active debts ordered by smallest current balance first.
      *
      * @return Collection<int, Debt>
      */
-    public function activeDebtsRanked(User $user): Collection
+    public function activeDebtsRanked(Company $company): Collection
     {
-        return $user->debts()
+        return $company->debts()
             ->where('status', Debt::STATUS_ACTIVE)
             ->orderBy('current_balance', 'asc')
             ->orderBy('id', 'asc')
             ->get();
     }
 
-    /**
-     * The current target debt (smallest active balance). Null if none active.
-     */
-    public function currentTarget(User $user): ?Debt
+    public function currentTarget(Company $company): ?Debt
     {
-        return $this->activeDebtsRanked($user)->first();
+        return $this->activeDebtsRanked($company)->first();
     }
 
-    /**
-     * Monthly debt allocation = monthly_revenue * allocation_percent (based on user settings).
-     */
-    public function monthlyAllocation(User $user): float
+    public function monthlyAllocation(Company $company): float
     {
-        $setting = $user->getOrCreateSetting();
-        return $setting->monthlyAllocation();
+        return $company->getOrCreateSetting()->monthlyAllocation();
     }
 
-    /**
-     * Rough estimate: how many months until current target is paid off at the monthly allocation rate.
-     */
-    public function estimatedMonthsToKillTarget(User $user): ?int
+    public function estimatedMonthsToKillTarget(Company $company): ?int
     {
-        $target = $this->currentTarget($user);
+        $target = $this->currentTarget($company);
         if (!$target) {
             return null;
         }
-        $alloc = $this->monthlyAllocation($user);
+        $alloc = $this->monthlyAllocation($company);
         if ($alloc <= 0) {
             return null;
         }
         return (int) ceil((float) $target->current_balance / $alloc);
     }
 
-    /**
-     * Estimate months to eliminate ALL active debts assuming:
-     *   - Every month the full monthly allocation goes to the current smallest active debt.
-     *   - When one is paid off, allocation rolls to the next smallest.
-     * Returns null if allocation <= 0 or no active debts.
-     */
-    public function estimatedMonthsToKillAll(User $user): ?int
+    public function estimatedMonthsToKillAll(Company $company): ?int
     {
-        $alloc = $this->monthlyAllocation($user);
+        $alloc = $this->monthlyAllocation($company);
         if ($alloc <= 0) {
             return null;
         }
-        $queue = $this->activeDebtsRanked($user)
+        $queue = $this->activeDebtsRanked($company)
             ->map(fn (Debt $d) => (float) $d->current_balance)
             ->filter(fn ($b) => $b > 0)
             ->values();
@@ -94,21 +78,10 @@ class SnowballService
         return $months;
     }
 
-    /**
-     * Applies a snowball payment from a given cashflow to the current target debt.
-     * Creates a Payment row and decrements the debt's current_balance.
-     * Marks debt as PAID if balance reaches 0.
-     *
-     * $overrideAmount lets the caller supply a custom amount; otherwise the cashflow's
-     * remaining allocation is used (capped at target's current balance).
-     *
-     * Returns the Payment, or null if no target / nothing to pay.
-     */
     public function applyPaymentFromCashflow(Cashflow $cashflow, ?float $overrideAmount = null, ?Carbon $paidOn = null): ?Payment
     {
-        /** @var User $user */
-        $user = $cashflow->user;
-        $target = $this->currentTarget($user);
+        $company = $cashflow->company;
+        $target = $this->currentTarget($company);
         if (!$target) {
             return null;
         }
@@ -120,7 +93,7 @@ class SnowballService
             return null;
         }
 
-        return DB::transaction(function () use ($cashflow, $user, $target, $amount, $paidOn) {
+        return DB::transaction(function () use ($cashflow, $company, $target, $amount, $paidOn) {
             $before = (float) $target->current_balance;
             $after = round($before - $amount, 2);
 
@@ -133,21 +106,19 @@ class SnowballService
             $target->save();
 
             return Payment::create([
-                'user_id' => $user->id,
-                'cashflow_id' => $cashflow->id,
-                'debt_id' => $target->id,
-                'paid_on' => $paidOn ?: ($cashflow->period ?: now()->toDateString()),
-                'amount' => $amount,
+                'user_id'        => $company->user_id,
+                'company_id'     => $company->id,
+                'cashflow_id'    => $cashflow->id,
+                'debt_id'        => $target->id,
+                'paid_on'        => $paidOn ?: ($cashflow->period ?: now()->toDateString()),
+                'amount'         => $amount,
                 'balance_before' => $before,
-                'balance_after' => $after < 0 ? 0 : $after,
+                'balance_after'  => $after < 0 ? 0 : $after,
             ]);
         });
     }
 
     /**
-     * Apply the full monthly allocation from a cashflow, rolling over to next debts as they get paid off.
-     * Creates multiple Payment rows if necessary.
-     *
      * @return Payment[]
      */
     public function distributeCashflow(Cashflow $cashflow): array
@@ -166,33 +137,31 @@ class SnowballService
     }
 
     /**
-     * Dashboard KPIs for a user.
-     *
      * @return array<string, mixed>
      */
-    public function dashboardKpis(User $user): array
+    public function dashboardKpis(Company $company): array
     {
-        $active = $user->debts()->where('status', Debt::STATUS_ACTIVE)->count();
-        $paid = $user->debts()->where('status', Debt::STATUS_PAID)->count();
-        $totalOutstanding = (float) $user->debts()->where('status', Debt::STATUS_ACTIVE)->sum('current_balance');
-        $totalOriginal = (float) $user->debts()->sum('original_balance');
-        $totalPaid = (float) $user->payments()->sum('amount');
-        $latestCashflow = $user->cashflows()->orderByDesc('period')->first();
-        $target = $this->currentTarget($user);
+        $active = $company->debts()->where('status', Debt::STATUS_ACTIVE)->count();
+        $paid = $company->debts()->where('status', Debt::STATUS_PAID)->count();
+        $totalOutstanding = (float) $company->debts()->where('status', Debt::STATUS_ACTIVE)->sum('current_balance');
+        $totalOriginal = (float) $company->debts()->sum('original_balance');
+        $totalPaid = (float) $company->payments()->sum('amount');
+        $latestCashflow = $company->cashflows()->orderByDesc('period')->first();
+        $target = $this->currentTarget($company);
 
         return [
-            'active_count' => $active,
-            'paid_count' => $paid,
-            'total_outstanding' => $totalOutstanding,
-            'total_original' => $totalOriginal,
-            'total_paid' => $totalPaid,
-            'latest_cashflow' => $latestCashflow,
-            'available_cash' => $latestCashflow ? (float) $latestCashflow->available_cash : 0.0,
-            'current_target' => $target,
-            'monthly_allocation' => $this->monthlyAllocation($user),
-            'months_to_kill_target' => $this->estimatedMonthsToKillTarget($user),
-            'months_to_kill_all' => $this->estimatedMonthsToKillAll($user),
-            'new_debt_allowed' => (bool) $user->getOrCreateSetting()->new_debt_allowed,
+            'active_count'          => $active,
+            'paid_count'            => $paid,
+            'total_outstanding'     => $totalOutstanding,
+            'total_original'        => $totalOriginal,
+            'total_paid'            => $totalPaid,
+            'latest_cashflow'       => $latestCashflow,
+            'available_cash'        => $latestCashflow ? (float) $latestCashflow->available_cash : 0.0,
+            'current_target'        => $target,
+            'monthly_allocation'    => $this->monthlyAllocation($company),
+            'months_to_kill_target' => $this->estimatedMonthsToKillTarget($company),
+            'months_to_kill_all'    => $this->estimatedMonthsToKillAll($company),
+            'new_debt_allowed'      => (bool) $company->getOrCreateSetting()->new_debt_allowed,
         ];
     }
 }

@@ -21,12 +21,18 @@ Route::get('/locale/{locale}', function (string $locale, Request $request) {
     return redirect()->back();
 })->name('locale.switch');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'company'])->group(function () {
     Route::get('/dashboard', DashboardView::class)->name('dashboard');
     Route::get('/debts', DebtsManager::class)->name('debts.index');
     Route::get('/cashflow', CashflowsManager::class)->name('cashflow.index');
     Route::get('/payments', PaymentsTable::class)->name('payments.index');
     Route::get('/settings', SettingsForm::class)->name('settings.index');
+    Route::get('/companies', \App\Livewire\Companies\CompaniesManager::class)->name('companies.index');
+    Route::post('/companies/{company}/switch', function (\App\Models\Company $company, Request $request) {
+        abort_unless($company->user_id === $request->user()->id, 404);
+        \App\Support\CurrentCompany::set($company);
+        return back();
+    })->name('companies.switch');
 });
 
 Route::middleware('auth')->group(function () {

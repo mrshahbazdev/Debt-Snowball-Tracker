@@ -13,6 +13,7 @@ class Cashflow extends Model
 
     protected $fillable = [
         'user_id',
+        'company_id',
         'period',
         'revenue',
         'debt_allocation',
@@ -30,6 +31,11 @@ class Cashflow extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function payments(): HasMany
