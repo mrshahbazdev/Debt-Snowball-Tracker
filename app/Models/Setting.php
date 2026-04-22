@@ -12,6 +12,7 @@ class Setting extends Model
 
     protected $fillable = [
         'user_id',
+        'company_id',
         'monthly_revenue',
         'debt_allocation_percent',
         'minimum_cash_buffer',
@@ -29,6 +30,11 @@ class Setting extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function allocationFraction(): float

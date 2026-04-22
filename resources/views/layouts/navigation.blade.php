@@ -8,6 +8,8 @@
          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'],
         ['route' => 'payments.index', 'label' => __('messages.nav.payments'), 'match' => 'payments.*',
          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>'],
+        ['route' => 'companies.index','label' => __('messages.nav.companies'), 'match' => 'companies.*',
+         'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M19 21V7a2 2 0 00-2-2h-3V3H10v2H7a2 2 0 00-2 2v14M9 21v-4h6v4M9 9h.01M13 9h.01M9 13h.01M13 13h.01"/>'],
         ['route' => 'settings.index', 'label' => __('messages.nav.settings'), 'match' => 'settings.*',
          'icon' => '<path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>'],
     ];
@@ -36,6 +38,39 @@
             </div>
 
             <div class="hidden md:flex md:items-center md:gap-3">
+                {{-- Company switcher --}}
+                @isset($currentCompany)
+                    <x-dropdown align="right" width="64">
+                        <x-slot name="trigger">
+                            <button class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 transition">
+                                <svg class="h-4 w-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V7a2 2 0 00-2-2h-3V3H10v2H7a2 2 0 00-2 2v14M9 21v-4h6v4"/></svg>
+                                <span class="font-medium max-w-[10rem] truncate">{{ $currentCompany->name }}</span>
+                                <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                            </button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <div class="px-4 py-2 text-[10px] uppercase tracking-wider text-slate-400">{{ __('messages.nav.switch_company') }}</div>
+                            @foreach (($userCompanies ?? collect()) as $co)
+                                <form method="POST" action="{{ route('companies.switch', $co) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left flex items-center justify-between px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 {{ $co->id === $currentCompany->id ? 'bg-sky-50 text-sky-700 font-semibold' : '' }}">
+                                        <span class="truncate">{{ $co->name }}</span>
+                                        @if ($co->id === $currentCompany->id)
+                                            <svg class="h-4 w-4 text-sky-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                        @endif
+                                    </button>
+                                </form>
+                            @endforeach
+                            <div class="border-t border-slate-100 mt-1">
+                                <a href="{{ route('companies.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-sky-700 hover:bg-sky-50">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                    {{ __('messages.nav.manage_companies') }}
+                                </a>
+                            </div>
+                        </x-slot>
+                    </x-dropdown>
+                @endisset
+
                 <x-language-switcher variant="dark" />
 
                 <x-dropdown align="right" width="48">
@@ -72,6 +107,25 @@
     </div>
 
     <div :class="{'block': open, 'hidden': ! open}" class="hidden md:hidden border-t border-slate-200">
+        @isset($currentCompany)
+            <div class="px-4 py-3 border-b border-slate-100">
+                <div class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">{{ __('messages.nav.current_company') }}</div>
+                <div class="text-sm font-semibold text-slate-900">{{ $currentCompany->name }}</div>
+                @if (($userCompanies ?? collect())->count() > 1)
+                    <div class="mt-2 space-y-1">
+                        @foreach ($userCompanies as $co)
+                            @if ($co->id !== $currentCompany->id)
+                                <form method="POST" action="{{ route('companies.switch', $co) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-2 py-1 rounded text-xs text-slate-700 hover:bg-slate-100">↻ {{ $co->name }}</button>
+                                </form>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+                <a href="{{ route('companies.index') }}" class="inline-block mt-2 text-xs text-sky-700">{{ __('messages.nav.manage_companies') }}</a>
+            </div>
+        @endisset
         <div class="px-4 py-3 space-y-1">
             @foreach ($navItems as $item)
                 @php $active = request()->routeIs($item['match']); @endphp

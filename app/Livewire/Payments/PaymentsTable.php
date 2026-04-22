@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Payments;
 
+use App\Support\CurrentCompany;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -16,10 +17,14 @@ class PaymentsTable extends Component
 
     public string $search = '';
 
+    protected function company()
+    {
+        return CurrentCompany::resolve(auth()->user());
+    }
+
     public function delete(int $id): void
     {
-        // Deleting a payment should also refund the debt's balance.
-        $payment = auth()->user()->payments()->with('debt')->findOrFail($id);
+        $payment = $this->company()->payments()->with('debt')->findOrFail($id);
         if ($payment->debt) {
             $payment->debt->current_balance = (float) $payment->debt->current_balance + (float) $payment->amount;
             if ($payment->debt->status === 'PAID') {
@@ -33,7 +38,7 @@ class PaymentsTable extends Component
 
     public function render(): View
     {
-        $payments = auth()->user()->payments()
+        $payments = $this->company()->payments()
             ->with(['debt', 'cashflow'])
             ->when($this->search !== '', function ($q) {
                 $q->whereHas('debt', fn ($qq) => $qq->where('creditor', 'like', '%' . $this->search . '%'));

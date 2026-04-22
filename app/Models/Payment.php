@@ -12,6 +12,7 @@ class Payment extends Model
 
     protected $fillable = [
         'user_id',
+        'company_id',
         'cashflow_id',
         'debt_id',
         'paid_on',
@@ -31,6 +32,11 @@ class Payment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function debt(): BelongsTo

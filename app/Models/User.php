@@ -6,7 +6,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -14,9 +13,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    public function setting(): HasOne
+    public function companies(): HasMany
     {
-        return $this->hasOne(Setting::class);
+        return $this->hasMany(Company::class)->orderBy('name');
     }
 
     public function debts(): HasMany
@@ -34,15 +33,16 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
-    public function getOrCreateSetting(): Setting
+    /**
+     * Ensures this user has at least one company and returns their primary one.
+     */
+    public function ensureCompany(): Company
     {
-        return $this->setting()->firstOrCreate([], [
-            'monthly_revenue' => 0,
-            'debt_allocation_percent' => 1.000,
-            'minimum_cash_buffer' => 0,
-            'new_debt_allowed' => false,
-            'currency' => 'PKR',
-        ]);
+        $company = $this->companies()->first();
+        if (!$company) {
+            $company = $this->companies()->create(['name' => 'My Company']);
+        }
+        return $company;
     }
 
     /**

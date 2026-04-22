@@ -4,6 +4,7 @@ namespace App\Livewire\Debts;
 
 use App\Models\Debt;
 use App\Services\SnowballService;
+use App\Support\CurrentCompany;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -28,6 +29,11 @@ class DebtsManager extends Component
 
     public string $filter = 'all'; // all | active | paid
 
+    protected function company()
+    {
+        return CurrentCompany::resolve(auth()->user());
+    }
+
     protected function rules(): array
     {
         return [
@@ -48,7 +54,7 @@ class DebtsManager extends Component
 
     public function openEdit(int $id): void
     {
-        $debt = auth()->user()->debts()->findOrFail($id);
+        $debt = $this->company()->debts()->findOrFail($id);
         $this->editingId = $debt->id;
         $this->creditor = $debt->creditor;
         $this->original_balance = (float) $debt->original_balance;
@@ -62,8 +68,9 @@ class DebtsManager extends Component
     public function save(): void
     {
         $data = $this->validate();
+        $company = $this->company();
         if ($this->editingId) {
-            $debt = auth()->user()->debts()->findOrFail($this->editingId);
+            $debt = $company->debts()->findOrFail($this->editingId);
             $debt->fill($data);
             if ($debt->status === Debt::STATUS_PAID && !$debt->paid_at) {
                 $debt->paid_at = now();
@@ -73,7 +80,7 @@ class DebtsManager extends Component
             }
             $debt->save();
         } else {
-            $debt = auth()->user()->debts()->create($data);
+            $debt = $company->debts()->create(array_merge($data, ['user_id' => $company->user_id]));
             if ($debt->status === Debt::STATUS_PAID) {
                 $debt->update(['paid_at' => now()]);
             }
@@ -84,12 +91,12 @@ class DebtsManager extends Component
 
     public function delete(int $id): void
     {
-        auth()->user()->debts()->findOrFail($id)->delete();
+        $this->company()->debts()->findOrFail($id)->delete();
     }
 
     public function togglePaid(int $id): void
     {
-        $debt = auth()->user()->debts()->findOrFail($id);
+        $debt = $this->company()->debts()->findOrFail($id);
         if ($debt->status === Debt::STATUS_ACTIVE) {
             $debt->update(['status' => Debt::STATUS_PAID, 'paid_at' => now(), 'current_balance' => 0]);
         } else {
@@ -117,9 +124,9 @@ class DebtsManager extends Component
 
     public function render(SnowballService $snowball): View
     {
-        $user = auth()->user();
+        $company = $this->company();
 
-        $query = $user->debts();
+        $query = $company->debts();
         if ($this->filter === 'active') {
             $query->where('status', Debt::STATUS_ACTIVE);
         } elseif ($this->filter === 'paid') {
@@ -127,7 +134,7 @@ class DebtsManager extends Component
         }
 
         $debts = $query->orderBy('status')->orderBy('current_balance')->paginate(15);
-        $target = $snowball->currentTarget($user);
+        $target = $snowball->currentTarget($company);
 
         return view('livewire.debts.debts-manager', [
             'debts' => $debts,

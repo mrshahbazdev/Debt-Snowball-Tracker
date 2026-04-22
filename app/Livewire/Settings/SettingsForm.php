@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Settings;
 
-use App\Models\Setting;
+use App\Support\CurrentCompany;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -16,13 +16,18 @@ class SettingsForm extends Component
     public float $debt_allocation_percent = 1;
     public float $minimum_cash_buffer = 0;
     public bool $new_debt_allowed = false;
-    public string $currency = 'PKR';
+    public string $currency = 'EUR';
 
     public ?string $savedMessage = null;
 
+    protected function company()
+    {
+        return CurrentCompany::resolve(auth()->user());
+    }
+
     public function mount(): void
     {
-        $setting = auth()->user()->getOrCreateSetting();
+        $setting = $this->company()->getOrCreateSetting();
         $this->monthly_revenue = (float) $setting->monthly_revenue;
         $this->debt_allocation_percent = (float) $setting->debt_allocation_percent;
         $this->minimum_cash_buffer = (float) $setting->minimum_cash_buffer;
@@ -44,7 +49,7 @@ class SettingsForm extends Component
     public function save(): void
     {
         $data = $this->validate();
-        $setting = auth()->user()->getOrCreateSetting();
+        $setting = $this->company()->getOrCreateSetting();
         $setting->fill($data)->save();
         $this->savedMessage = 'Settings saved.';
     }
